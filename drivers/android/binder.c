@@ -5622,32 +5622,53 @@ static int __init binder_init(void)
 						 binder_debugfs_dir_entry_root);
 
 	if (binder_debugfs_dir_entry_root) {
-		debugfs_create_file("state",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    NULL,
-				    &binder_state_fops);
-		debugfs_create_file("stats",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    NULL,
-				    &binder_stats_fops);
-		debugfs_create_file("transactions",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    NULL,
-				    &binder_transactions_fops);
-		debugfs_create_file("transaction_log",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    &binder_transaction_log,
-				    &binder_transaction_log_fops);
-		debugfs_create_file("failed_transaction_log",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    &binder_transaction_log_failed,
-				    &binder_transaction_log_fops);
+		debugfs_create_file("state", S_IRUGO, binder_debugfs_dir_entry_root, NULL, &binder_state_fops);
+		debugfs_create_file("stats", S_IRUGO, binder_debugfs_dir_entry_root, NULL, &binder_stats_fops);
+		debugfs_create_file("transactions", S_IRUGO, binder_debugfs_dir_entry_root, NULL, &binder_transactions_fops);
+		debugfs_create_file("transaction_log", S_IRUGO, binder_debugfs_dir_entry_root, &binder_transaction_log, &binder_transaction_log_fops);
+		debugfs_create_file("failed_transaction_log", S_IRUGO, binder_debugfs_dir_entry_root, &binder_transaction_log_failed, &binder_transaction_log_fops);
 	}
+
+	INIT_HLIST_HEAD(&binder_devices);
+
+	device_names = kstrdup(BINDER_DEVICES, GFP_KERNEL);
+	if (!device_names)
+		return -ENOMEM;
+
+	while ((device_name = strsep(&device_names, ","))) {
+		if (!*device_name)
+			continue;
+
+		device = kzalloc(sizeof(*device), GFP_KERNEL);
+		if (!device) {
+			ret = -ENOMEM;
+			goto err_alloc_device;
+		}
+
+		device->miscdev.minor = MISC_DYNAMIC_MINOR;
+		device->miscdev.name = device_name;
+		device->miscdev.fops = &binder_fops;
+
+		ret = misc_register(&device->miscdev);
+		if (ret) {
+			pr_err("binder: failed to register /dev/%s\n", device_name);
+			kfree(device);
+			continue;
+		}
+
+		device->context.name = device->miscdev.name;
+		hlist_add_head(&device->hlist, &binder_devices);
+		pr_info("binder: registered device /dev/%s\n", device_name);
+	}
+
+	kfree(device_names);
+	pr_info("binder: initialized binder, hwbinder, and vndbinder devices\n");
+	return 0;
+
+err_alloc_device:
+	kfree(device_names);
+	return ret;
+}
 
 	/*
 	 * Copy the module_parameter string, because we don't want to
