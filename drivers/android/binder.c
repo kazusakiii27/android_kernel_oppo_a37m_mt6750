@@ -81,6 +81,22 @@
 
 #define BINDER_DEVICES "binder,hwbinder,vndbinder"
 
+static HLIST_HEAD(binder_deferred_list);
+static DEFINE_MUTEX(binder_deferred_lock);
+
+static HLIST_HEAD(binder_devices);
+static HLIST_HEAD(binder_procs);
+static DEFINE_MUTEX(binder_procs_lock);
+
+static HLIST_HEAD(binder_dead_nodes);
+static DEFINE_SPINLOCK(binder_dead_nodes_lock);
+
+static struct dentry *binder_debugfs_dir_entry_root;
+static struct dentry *binder_debugfs_dir_entry_proc;
+static atomic_t binder_last_id;
+static struct hlist_head binder_devices;
+static struct workqueue_struct *binder_deferred_workqueue;
+
 static struct miscdevice binder_miscdev = {
     .minor = MISC_DYNAMIC_MINOR,
     .name = "binder",
@@ -98,21 +114,6 @@ static struct miscdevice vndbinder_miscdev = {
     .name = "vndbinder",
     .fops = &binder_fops,
 };
-
-static HLIST_HEAD(binder_deferred_list);
-static DEFINE_MUTEX(binder_deferred_lock);
-
-static HLIST_HEAD(binder_devices);
-static HLIST_HEAD(binder_procs);
-static DEFINE_MUTEX(binder_procs_lock);
-
-static HLIST_HEAD(binder_dead_nodes);
-static DEFINE_SPINLOCK(binder_dead_nodes_lock);
-
-static struct dentry *binder_debugfs_dir_entry_root;
-static struct dentry *binder_debugfs_dir_entry_proc;
-static atomic_t binder_last_id;
-static struct workqueue_struct *binder_deferred_workqueue;
 
 #define BINDER_DEBUG_ENTRY(name) \
 static int binder_##name##_open(struct inode *inode, struct file *file) \
@@ -297,9 +298,6 @@ struct binder_device {
 	struct miscdevice miscdev;
 	struct binder_context context;
 };
-
-// Global list to save all binder_devices
-static struct hlist_head binder_devices;
 
 /**
  * struct binder_work - work enqueued on a worklist
