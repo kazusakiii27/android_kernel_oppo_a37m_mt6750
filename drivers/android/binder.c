@@ -79,6 +79,8 @@
 #include "binder_alloc.h"
 #include "binder_trace.h"
 
+#define BINDER_DEVICES "binder,hwbinder,vndbinder"
+
 static struct miscdevice binder_miscdev = {
     .minor = MISC_DYNAMIC_MINOR,
     .name = "binder",
