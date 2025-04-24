@@ -14,15 +14,59 @@
 
 / {
 	model = "MT6755";
-	compatible = "mediatek,MT6755";
+	compatible = "google,treble", "mediatek,mt6755";
 	interrupt-parent = <&gic>;
 	#address-cells = <2>;
 	#size-cells = <2>;
 
 	/* chosen */
 	chosen {
-		bootargs = "console=tty0 console=ttyMT0,921600n1 root=/dev/ram initrd=0x44000000,0x4B434E loglevel=8";
+		bootargs = "console=tty0 console=ttyMT0,921600n1 root=/dev/ram initrd=0x44000000,0x4B434E loglevel=8, androidboot.hardware=mt6755";
 	};
+
+// System hardware nodes that are independent of the vendor
+    &uart1 {
+        status = "okay";
+    };
+
+    &i2c1 {
+        status = "okay";
+    };
+
+    &mmc {
+        status = "okay";
+    };
+
+    &usb {
+        status = "okay";
+    };
+
+    // Vendor node containing vendor-specific drivers
+    &vendor {
+        compatible = "mediatek,mt6755-vendor";
+
+        // Vendor-specific drivers separated from the system
+        &audio {
+            status = "okay";
+        };
+
+        &wifi {
+            status = "okay";
+        };
+
+        &gpu {
+            status = "okay";
+        };
+
+        &camera {
+            status = "okay";
+        };
+
+        &modem {
+            status = "okay";
+        };
+    };
+};
 
 	/* Do not put any bus before mtk-msdc, because it should be mtk-msdc.0 for partition device node usage */
 	mtk-msdc {
