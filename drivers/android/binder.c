@@ -5612,6 +5612,7 @@ static int __init binder_init(void)
 
 	atomic_set(&binder_transaction_log.cur, ~0U);
 	atomic_set(&binder_transaction_log_failed.cur, ~0U);
+
 	binder_deferred_workqueue = create_singlethread_workqueue("binder");
 	if (!binder_deferred_workqueue)
 		return -ENOMEM;
@@ -5646,12 +5647,19 @@ static int __init binder_init(void)
 		}
 
 		device->miscdev.minor = MISC_DYNAMIC_MINOR;
-		device->miscdev.name = device_name;
+		device->miscdev.name = kstrdup(device_name, GFP_KERNEL);
+		if (!device->miscdev.name) {
+			kfree(device);
+			ret = -ENOMEM;
+			goto err_alloc_device;
+		}
+
 		device->miscdev.fops = &binder_fops;
 
 		ret = misc_register(&device->miscdev);
 		if (ret) {
 			pr_err("binder: failed to register /dev/%s\n", device_name);
+			kfree(device->miscdev.name);
 			kfree(device);
 			continue;
 		}
@@ -5666,6 +5674,12 @@ static int __init binder_init(void)
 	return 0;
 
 err_alloc_device:
+	hlist_for_each_entry_safe(device, tmp, &binder_devices, hlist) {
+		misc_deregister(&device->miscdev);
+		hlist_del(&device->hlist);
+		kfree(device->miscdev.name);
+		kfree(device);
+	}
 	kfree(device_names);
 	return ret;
 }
