@@ -27,6 +27,14 @@
 	((((c1)<<24)) | (((c2)<<16)) | (((c3)<<8)) | (c4))
 #define B_TYPE_LARGE 0x85
 
+/*
+ * Available binder devices:
+ *   /dev/binder     - main binder IPC
+ *   /dev/hwbinder   - hardware abstraction layer binder
+ *   /dev/vndbinder  - vendor-specific binder
+ */
+#define BINDER_DEVICES "binder,hwbinder,vndbinder"
+
 enum {
 	BINDER_TYPE_BINDER	= B_PACK_CHARS('s', 'b', '*', B_TYPE_LARGE),
 	BINDER_TYPE_WEAK_BINDER	= B_PACK_CHARS('w', 'b', '*', B_TYPE_LARGE),
