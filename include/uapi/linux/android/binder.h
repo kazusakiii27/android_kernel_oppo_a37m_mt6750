@@ -35,6 +35,11 @@
  */
 #define BINDER_DEVICES "binder,hwbinder,vndbinder"
 
+// (opsional jika mau pakai minor secara manual)
+#define BINDER_MINOR      0
+#define HWBINDER_MINOR    1
+#define VNDBINDER_MINOR   2
+
 enum {
 	BINDER_TYPE_BINDER	= B_PACK_CHARS('s', 'b', '*', B_TYPE_LARGE),
 	BINDER_TYPE_WEAK_BINDER	= B_PACK_CHARS('w', 'b', '*', B_TYPE_LARGE),
