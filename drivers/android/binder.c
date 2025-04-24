@@ -79,6 +79,24 @@
 #include "binder_alloc.h"
 #include "binder_trace.h"
 
+static struct miscdevice binder_miscdev = {
+    .minor = MISC_DYNAMIC_MINOR,
+    .name = "binder",
+    .fops = &binder_fops,
+};
+
+static struct miscdevice hwbinder_miscdev = {
+    .minor = MISC_DYNAMIC_MINOR,
+    .name = "hwbinder",
+    .fops = &binder_fops,
+};
+
+static struct miscdevice vndbinder_miscdev = {
+    .minor = MISC_DYNAMIC_MINOR,
+    .name = "vndbinder",
+    .fops = &binder_fops,
+};
+
 static HLIST_HEAD(binder_deferred_list);
 static DEFINE_MUTEX(binder_deferred_lock);
 
