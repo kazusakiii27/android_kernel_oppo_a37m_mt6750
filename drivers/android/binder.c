@@ -298,6 +298,9 @@ struct binder_device {
 	struct binder_context context;
 };
 
+// Global list to save all binder_devices
+static struct hlist_head binder_devices;
+
 /**
  * struct binder_work - work enqueued on a worklist
  * @entry:             node enqueued on list
