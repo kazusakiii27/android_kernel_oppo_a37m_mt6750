@@ -5684,6 +5684,27 @@ err_alloc_device:
 	return ret;
 }
 
+static void __exit binder_exit(void)
+{
+	struct binder_device *device;
+	struct hlist_node *tmp;
+
+	hlist_for_each_entry_safe(device, tmp, &binder_devices, hlist) {
+		misc_deregister(&device->miscdev);
+		hlist_del(&device->hlist);
+		kfree(device->miscdev.name);
+		kfree(device);
+	}
+
+	debugfs_remove_recursive(binder_debugfs_dir_entry_root);
+
+	if (binder_deferred_workqueue)
+		destroy_workqueue(binder_deferred_workqueue);
+}
+
+module_init(binder_init);
+module_exit(binder_exit);
+
 	/*
 	 * Copy the module_parameter string, because we don't want to
 	 * tokenize it in-place.
