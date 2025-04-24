@@ -5619,8 +5619,7 @@ static int __init binder_init(void)
 
 	binder_debugfs_dir_entry_root = debugfs_create_dir("binder", NULL);
 	if (binder_debugfs_dir_entry_root)
-		binder_debugfs_dir_entry_proc = debugfs_create_dir("proc",
-						 binder_debugfs_dir_entry_root);
+		binder_debugfs_dir_entry_proc = debugfs_create_dir("proc", binder_debugfs_dir_entry_root);
 
 	if (binder_debugfs_dir_entry_root) {
 		debugfs_create_file("state", S_IRUGO, binder_debugfs_dir_entry_root, NULL, &binder_state_fops);
@@ -5674,6 +5673,7 @@ static int __init binder_init(void)
 	return 0;
 
 err_alloc_device:
+	// Cleanup if memory allocation fails
 	hlist_for_each_entry_safe(device, tmp, &binder_devices, hlist) {
 		misc_deregister(&device->miscdev);
 		hlist_del(&device->hlist);
@@ -5689,6 +5689,7 @@ static void __exit binder_exit(void)
 	struct binder_device *device;
 	struct hlist_node *tmp;
 
+	// Cleanup all binder devices
 	hlist_for_each_entry_safe(device, tmp, &binder_devices, hlist) {
 		misc_deregister(&device->miscdev);
 		hlist_del(&device->hlist);
@@ -5696,8 +5697,10 @@ static void __exit binder_exit(void)
 		kfree(device);
 	}
 
+	// Remove debugfs entries
 	debugfs_remove_recursive(binder_debugfs_dir_entry_root);
 
+	// Destroy the workqueue if it was created
 	if (binder_deferred_workqueue)
 		destroy_workqueue(binder_deferred_workqueue);
 }
